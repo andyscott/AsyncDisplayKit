@@ -57,9 +57,10 @@ typedef NS_ENUM(NSUInteger, ASTextNodeRendererMeasureOption) {
                         truncationString:(NSAttributedString *)truncationString
                           truncationMode:(NSLineBreakMode)truncationMode
                         maximumLineCount:(NSUInteger)maximumLineCount
-                         constrainedSize:(CGSize)constrainedSize
                                 fadeRect:(CGRect)fadeRect
-                           fadeDirection:(ASTextNodeFadeDirection)fadeDirection;
+                           fadeDirection:(ASTextNodeFadeDirection)fadeDirection
+                         constrainedSize:(CGSize)constrainedSize;
+
 #pragma mark - Drawing
 /*
  * Draw the renderer's text content into the bounds provided.

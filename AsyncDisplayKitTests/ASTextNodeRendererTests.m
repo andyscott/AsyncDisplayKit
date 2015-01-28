@@ -52,6 +52,8 @@
                                                       truncationString:_truncationString
                                                         truncationMode:_truncationMode
                                                       maximumLineCount:_maximumLineCount
+                                                              fadeRect:CGRectZero
+                                                         fadeDirection:ASTextNodeFadeDirectionNone
                                                        constrainedSize:_constrainedSize];
 
 }

@@ -241,12 +241,12 @@ ASDISPLAYNODE_INLINE CGFloat ceilPixelValue(CGFloat f)
   if (_renderer == nil) {
     CGSize constrainedSize = _constrainedSize.width != -INFINITY ? _constrainedSize : self.bounds.size;
     _renderer = [[ASTextNodeRenderer alloc] initWithAttributedString:_attributedString
-                                                        truncationString:_composedTruncationString
-                                                          truncationMode:_truncationMode
-                                                        maximumLineCount:_maximumLineCount
-                                                         constrainedSize:constrainedSize
-                                                                fadeRect:_fadeRect
-                                                           fadeDirection:_fadeDirection];
+                                                    truncationString:_composedTruncationString
+                                                      truncationMode:_truncationMode
+                                                    maximumLineCount:_maximumLineCount
+                                                            fadeRect:_fadeRect
+                                                       fadeDirection:_fadeDirection
+                                                     constrainedSize:constrainedSize];
   }
   return _renderer;
 }

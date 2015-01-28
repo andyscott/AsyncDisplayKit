@@ -49,9 +49,9 @@ static const CGFloat ASTextNodeRendererTextCapHeightPadding = 1.3;
                         truncationString:(NSAttributedString *)truncationString
                           truncationMode:(NSLineBreakMode)truncationMode
                         maximumLineCount:(NSUInteger)maximumLineCount
-                         constrainedSize:(CGSize)constrainedSize
                                 fadeRect:(CGRect)fadeRect
                            fadeDirection:(ASTextNodeFadeDirection)fadeDirection
+                         constrainedSize:(CGSize)constrainedSize
 {
   if (self = [super init]) {
     _attributedString = attributedString;
