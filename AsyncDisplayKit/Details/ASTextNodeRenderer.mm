@@ -644,7 +644,6 @@ typedef NS_ENUM(NSUInteger, ASTextNodeRendererFadeDirection) {
                                                        (CGBitmapInfo)kCGImageAlphaNone);
   CGContextSetFillColorWithColor(offscrenContext, [UIColor whiteColor].CGColor);
   CGContextFillRect(offscrenContext, bounds);
-  CGContextSetFillColorWithColor(offscrenContext, [[UIColor blackColor] colorWithAlphaComponent:0.5].CGColor);
   
   CGFloat locations[2] = { 0.0f, 0.0f };
   switch (direction) {
@@ -683,7 +682,6 @@ typedef NS_ENUM(NSUInteger, ASTextNodeRendererFadeDirection) {
       break;
     }
   }
-  
   
   CGContextSaveGState(offscrenContext);
   CGContextAddRect(offscrenContext, maskRect);
