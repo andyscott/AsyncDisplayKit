@@ -224,6 +224,21 @@ static const CGFloat ASTextNodeRendererTextCapHeightPadding = 1.3;
   return textRect;
 }
 
+- (CGRect)rectForLastLineGlyphs
+{
+  ASDN::MutexLocker l(_textKitLock);
+  
+  [self _initializeTextKitComponentsIfNeeded];
+
+  // Force glyph generation and layout.
+  [_layoutManager ensureLayoutForTextContainer:_textContainer];
+  
+  NSRange lineRange;
+  NSUInteger lastGlyphIndex = [_layoutManager numberOfGlyphs] - 1;
+  [_layoutManager lineFragmentRectForGlyphAtIndex:lastGlyphIndex effectiveRange:&lineRange];
+  return [_layoutManager boundingRectForGlyphRange:lineRange inTextContainer:_textContainer];
+}
+
 - (NSArray *)rectsForTextRange:(NSRange)textRange
                  measureOption:(ASTextNodeRendererMeasureOption)measureOption
 {
@@ -598,6 +613,7 @@ static const CGFloat ASTextNodeRendererTextCapHeightPadding = 1.3;
     [_layoutManager drawBackgroundForGlyphRange:glyphRange atPoint:bounds.origin];
     [_layoutManager drawGlyphsForGlyphRange:glyphRange atPoint:bounds.origin];
   }
+    
 
   CGContextRestoreGState(context);
   UIGraphicsPopContext();

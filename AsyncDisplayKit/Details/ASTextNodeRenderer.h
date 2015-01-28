@@ -109,6 +109,9 @@ typedef NS_ENUM(NSUInteger, ASTextNodeRendererMeasureOption) {
  */
 - (CGRect)frameForTextRange:(NSRange)textRange;
 
+/* Andy TODO */
+- (CGRect)rectForLastLineGlyphs;
+
 /*
  * Returns an array of rects representing the lines in the given character range
  *

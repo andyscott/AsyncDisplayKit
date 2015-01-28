@@ -24,6 +24,7 @@ static const CGFloat kInnerPadding = 10.0f;
 
   ASNetworkImageNode *_imageNode;
   ASTextNode *_textNode;
+  ASDisplayNode *_testNode;
   ASDisplayNode *_divider;
 }
 
@@ -92,6 +93,10 @@ static const CGFloat kInnerPadding = 10.0f;
   _divider = [[ASDisplayNode alloc] init];
   _divider.backgroundColor = [UIColor lightGrayColor];
   [self addSubnode:_divider];
+  
+  _testNode = [[ASDisplayNode alloc] init];
+  _testNode.backgroundColor = [[UIColor greenColor] colorWithAlphaComponent:0.5]; //[[UIColor greenColor] colorWithAlphaComponent:0.5];
+  [self addSubnode:_testNode];
 
   return self;
 }
@@ -144,6 +149,9 @@ static const CGFloat kInnerPadding = 10.0f;
 
   CGSize textSize = _textNode.calculatedSize;
   _textNode.frame = CGRectMake(kOuterPadding + kImageSize + kInnerPadding, kOuterPadding, textSize.width, textSize.height);
+  
+  //CGRect rect = [_textNode frameForLastLineGlyphs];
+  //_testNode.frame = CGRectOffset(rect, _textNode.frame.origin.x, _textNode.frame.origin.y);
 }
 
 @end

@@ -334,6 +334,41 @@ ASDISPLAYNODE_INLINE CGFloat ceilPixelValue(CGFloat f)
     }
   }
 
+  // Andy TODO
+  CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceGray();
+  CGContextRef offscrenContext = CGBitmapContextCreate(NULL,
+                                                       bounds.size.width,
+                                                       bounds.size.height,
+                                                       8, 4 * bounds.size.width,
+                                                       colorSpace,
+                                                       (CGBitmapInfo)kCGImageAlphaNone);
+  CGContextSetFillColorWithColor(offscrenContext, [UIColor whiteColor].CGColor);
+  CGContextFillRect(offscrenContext, bounds);
+  CGContextSetFillColorWithColor(offscrenContext, [[UIColor blackColor] colorWithAlphaComponent:0.5].CGColor);
+
+  CGFloat       locations[2]  = { 0.0f, 1.0f };
+  CGFloat       components[4] = { 1.0f, 1.0f, 0.0f, 1.0f };
+  CGGradientRef gradient      = CGGradientCreateWithColorComponents(colorSpace, components, locations, 2);
+  CGColorSpaceRelease(colorSpace);
+  
+  CGRect fadeRect = [parameters.renderer rectForLastLineGlyphs];
+
+  CGFloat midY  = CGRectGetMidY(fadeRect);
+  CGPoint p0    = CGPointMake(CGRectGetMinX(fadeRect), midY);
+  CGPoint p1    = CGPointMake(CGRectGetMaxX(fadeRect), midY);
+  
+  CGContextSaveGState(offscrenContext);
+  CGContextAddRect(offscrenContext, fadeRect);
+  CGContextClip(offscrenContext);
+  CGContextDrawLinearGradient(offscrenContext, gradient, p0, p1, 0);
+  CGContextRestoreGState(offscrenContext);
+  CGGradientRelease(gradient);
+  CGImageRef ref = CGBitmapContextCreateImage(offscrenContext);
+  CGContextClipToMask(context, bounds, ref);
+  CGImageRelease(ref);
+  CGContextRelease(offscrenContext);
+  // end of Andy TODO
+  
   // Draw shadow
   [parameters.shadower setShadowInContext:context];
 
@@ -670,6 +705,12 @@ ASDISPLAYNODE_INLINE CGFloat ceilPixelValue(CGFloat f)
 - (CGRect)frameForTextRange:(NSRange)textRange
 {
   CGRect frame = [[self _renderer] frameForTextRange:textRange];
+  return [self.class _adjustRendererRect:frame forShadowPadding:self.shadowPadding];
+}
+
+- (CGRect)frameForLastLineGlyphs
+{
+  CGRect frame = [[self _renderer] rectForLastLineGlyphs];
   return [self.class _adjustRendererRect:frame forShadowPadding:self.shadowPadding];
 }
 

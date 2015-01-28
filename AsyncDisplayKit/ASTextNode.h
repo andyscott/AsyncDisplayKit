@@ -138,6 +138,9 @@ typedef NS_ENUM(NSUInteger, ASTextNodeHighlightStyle) {
  */
 - (CGRect)frameForTextRange:(NSRange)textRange;
 
+/** Andy TODO */
+- (CGRect)frameForLastLineGlyphs;
+
 /**
  @abstract Returns the trailing rectangle of space in the receiver, after the final character.
  @discussion Use this method to detect which portion of the receiver is not occupied by characters.
