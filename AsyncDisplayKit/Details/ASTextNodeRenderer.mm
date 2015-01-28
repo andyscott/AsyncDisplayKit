@@ -18,6 +18,13 @@
 static const CGFloat ASTextNodeRendererGlyphTouchHitSlop = 5.0;
 static const CGFloat ASTextNodeRendererTextCapHeightPadding = 1.3;
 
+typedef NS_ENUM(NSUInteger, ASTextNodeRendererFadeDirection) {
+  ASTextNodeRendererFadeDirectionUp,
+  ASTextNodeRendererFadeDirectionRight,
+  ASTextNodeRendererFadeDirectionDown,
+  ASTextNodeRendererFadeDirectionLeft
+};
+
 @interface ASTextNodeRenderer ()
 
 @end
@@ -610,6 +617,10 @@ static const CGFloat ASTextNodeRendererTextCapHeightPadding = 1.3;
   NSRange glyphRange = [_layoutManager glyphRangeForTextContainer:_textContainer];
   {
     ASDN::MutexLocker l(_textKitLock);
+    
+    CGRect fadeRect = [self rectForLastLineGlyphs];
+    [self setFadeMask:fadeRect inRect:bounds withDirection:ASTextNodeRendererFadeDirectionRight inContext:context];
+    
     [_layoutManager drawBackgroundForGlyphRange:glyphRange atPoint:bounds.origin];
     [_layoutManager drawGlyphsForGlyphRange:glyphRange atPoint:bounds.origin];
   }
@@ -617,6 +628,74 @@ static const CGFloat ASTextNodeRendererTextCapHeightPadding = 1.3;
 
   CGContextRestoreGState(context);
   UIGraphicsPopContext();
+}
+
+- (void)setFadeMask:(CGRect)maskRect
+             inRect:(CGRect)bounds
+      withDirection:(ASTextNodeRendererFadeDirection)direction
+          inContext:(CGContextRef)context
+{
+  CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceGray();
+  CGContextRef offscrenContext = CGBitmapContextCreate(NULL,
+                                                       bounds.size.width,
+                                                       bounds.size.height,
+                                                       8, 4 * bounds.size.width,
+                                                       colorSpace,
+                                                       (CGBitmapInfo)kCGImageAlphaNone);
+  CGContextSetFillColorWithColor(offscrenContext, [UIColor whiteColor].CGColor);
+  CGContextFillRect(offscrenContext, bounds);
+  CGContextSetFillColorWithColor(offscrenContext, [[UIColor blackColor] colorWithAlphaComponent:0.5].CGColor);
+  
+  CGFloat locations[2] = { 0.0f, 0.0f };
+  switch (direction) {
+    case ASTextNodeRendererFadeDirectionDown:
+    case ASTextNodeRendererFadeDirectionRight:
+      locations[1] = 1.0f;
+      break;
+      
+    case ASTextNodeRendererFadeDirectionUp:
+    case ASTextNodeRendererFadeDirectionLeft:
+      locations[0] = 1.0f;
+      break;
+  }
+  
+  CGFloat       components[4] = { 1.0f, 1.0f, 0.0f, 1.0f };
+  CGGradientRef gradient      = CGGradientCreateWithColorComponents(colorSpace, components, locations, 2);
+  CGColorSpaceRelease(colorSpace);
+  
+  CGPoint p0; // gradient start
+  CGPoint p1; // gradient end
+  
+  switch (direction) {
+    case ASTextNodeRendererFadeDirectionUp:
+    case ASTextNodeRendererFadeDirectionDown: {
+      CGFloat midX  = CGRectGetMidX(maskRect);
+      p0    = CGPointMake(midX, CGRectGetMinY(maskRect));
+      p1    = CGPointMake(midX, CGRectGetMaxY(maskRect));
+      break;
+    }
+      
+    case ASTextNodeRendererFadeDirectionLeft:
+    case ASTextNodeRendererFadeDirectionRight: {
+      CGFloat midY  = CGRectGetMidY(maskRect);
+      p0    = CGPointMake(CGRectGetMinX(maskRect), midY);
+      p1    = CGPointMake(CGRectGetMaxX(maskRect), midY);
+      break;
+    }
+  }
+  
+  
+  CGContextSaveGState(offscrenContext);
+  CGContextAddRect(offscrenContext, maskRect);
+  CGContextClip(offscrenContext);
+  CGContextDrawLinearGradient(offscrenContext, gradient, p0, p1, 0);
+  CGContextRestoreGState(offscrenContext);
+  CGGradientRelease(gradient);
+  CGImageRef ref = CGBitmapContextCreateImage(offscrenContext);
+  CGContextClipToMask(context, bounds, ref);
+  CGImageRelease(ref);
+  CGContextRelease(offscrenContext);
+  // end of Andy TODO
 }
 
 #pragma mark - String Ranges
