@@ -10,12 +10,3 @@
 
 // Use this attribute name to add "word kerning"
 static NSString *const ASTextNodeWordKerningAttributeName = @"ASAttributedStringWordKerning";
-
-// Andy TODO
-typedef NS_ENUM(NSUInteger, ASTextNodeFadeDirection) {
-  ASTextNodeFadeDirectionNone,
-  ASTextNodeFadeDirectionLeft,
-  ASTextNodeFadeDirectionRight,
-  ASTextNodeFadeDirectionUp,
-  ASTextNodeFadeDirectionDown
-};

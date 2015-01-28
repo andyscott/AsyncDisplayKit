@@ -30,7 +30,9 @@ static NSString *ASTextNodeTruncationTokenAttributeName = @"ASTextNodeTruncation
 - (instancetype)initWithRenderer:(ASTextNodeRenderer *)renderer
                         shadower:(ASTextNodeShadower *)shadower
                       textOrigin:(CGPoint)textOrigin
-                 backgroundColor:(CGColorRef)backgroundColor;
+                 backgroundColor:(CGColorRef)backgroundColor
+                        fadeRect:(CGRect)fadeRect
+                   fadeDirection:(ASTextNodeFadeDirection)fadeDirection;
 
 @property (nonatomic, strong, readonly) ASTextNodeRenderer *renderer;
 
@@ -40,6 +42,10 @@ static NSString *ASTextNodeTruncationTokenAttributeName = @"ASTextNodeTruncation
 
 @property (nonatomic, assign, readonly) CGColorRef backgroundColor;
 
+@property (nonatomic, assign, readonly) CGRect fadeRect;
+
+@property (nonatomic, assign, readonly) ASTextNodeFadeDirection fadeDirection;
+
 @end
 
 @implementation ASTextNodeDrawParameters
@@ -48,12 +54,16 @@ static NSString *ASTextNodeTruncationTokenAttributeName = @"ASTextNodeTruncation
                         shadower:(ASTextNodeShadower *)shadower
                       textOrigin:(CGPoint)textOrigin
                  backgroundColor:(CGColorRef)backgroundColor
+                        fadeRect:(CGRect)fadeRect
+                   fadeDirection:(ASTextNodeFadeDirection)fadeDirection
 {
   if (self = [super init]) {
     _renderer = renderer;
     _shadower = shadower;
     _textOrigin = textOrigin;
     _backgroundColor = CGColorRetain(backgroundColor);
+    _fadeRect = fadeRect;
+    _fadeDirection = fadeDirection;
   }
   return self;
 }
@@ -244,8 +254,6 @@ ASDISPLAYNODE_INLINE CGFloat ceilPixelValue(CGFloat f)
                                                     truncationString:_composedTruncationString
                                                       truncationMode:_truncationMode
                                                     maximumLineCount:_maximumLineCount
-                                                            fadeRect:_fadeRect
-                                                       fadeDirection:_fadeDirection
                                                      constrainedSize:constrainedSize];
   }
   return _renderer;
@@ -341,9 +349,91 @@ ASDISPLAYNODE_INLINE CGFloat ceilPixelValue(CGFloat f)
 
   // Draw text
   bounds.origin = parameters.textOrigin;
+  
+  if (parameters.fadeDirection != ASTextNodeFadeDirectionNone) {
+    [self drawFadeMask:parameters.fadeRect
+                inRect:bounds
+         withDirection:parameters.fadeDirection
+             inContext:context];
+  }
+  
   [parameters.renderer drawInRect:bounds inContext:context];
 
   CGContextRestoreGState(context);
+}
+
++ (void)drawFadeMask:(CGRect)maskRect
+              inRect:(CGRect)bounds
+       withDirection:(ASTextNodeFadeDirection)direction
+           inContext:(CGContextRef)context
+{
+  CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceGray();
+  CGContextRef offscrenContext = CGBitmapContextCreate(NULL,
+                                                       bounds.size.width,
+                                                       bounds.size.height,
+                                                       8, 4 * bounds.size.width,
+                                                       colorSpace,
+                                                       (CGBitmapInfo)kCGImageAlphaNone);
+  CGContextSetFillColorWithColor(offscrenContext, [UIColor whiteColor].CGColor);
+  CGContextFillRect(offscrenContext, bounds);
+  
+  CGFloat locations[2] = { 0.0f, 0.0f };
+  
+  switch (direction) {
+      // down and right are normal
+    case ASTextNodeFadeDirectionDown:
+    case ASTextNodeFadeDirectionRight:
+      locations[1] = 1.0f;
+      break;
+      
+      // up and left are reversed
+    case ASTextNodeFadeDirectionUp:
+    case ASTextNodeFadeDirectionLeft:
+      locations[0] = 1.0f;
+      break;
+      
+    case ASTextNodeFadeDirectionNone:
+      break;
+  }
+  
+  CGFloat       components[4] = { 1.0f, 1.0f, 0.0f, 1.0f };
+  CGGradientRef gradient      = CGGradientCreateWithColorComponents(colorSpace, components, locations, 2);
+  CGColorSpaceRelease(colorSpace);
+  
+  CGPoint p0; // gradient start
+  CGPoint p1; // gradient end
+  
+  switch (direction) {
+    case ASTextNodeFadeDirectionUp:
+    case ASTextNodeFadeDirectionDown: {
+      CGFloat midX  = CGRectGetMidX(maskRect);
+      p0    = CGPointMake(midX, CGRectGetMinY(maskRect));
+      p1    = CGPointMake(midX, CGRectGetMaxY(maskRect));
+      break;
+    }
+      
+    case ASTextNodeFadeDirectionLeft:
+    case ASTextNodeFadeDirectionRight: {
+      CGFloat midY  = CGRectGetMidY(maskRect);
+      p0    = CGPointMake(CGRectGetMinX(maskRect), midY);
+      p1    = CGPointMake(CGRectGetMaxX(maskRect), midY);
+      break;
+    }
+      
+    case ASTextNodeFadeDirectionNone:
+      break;
+  }
+  
+  CGContextSaveGState(offscrenContext);
+  CGContextAddRect(offscrenContext, maskRect);
+  CGContextClip(offscrenContext);
+  CGContextDrawLinearGradient(offscrenContext, gradient, p0, p1, 0);
+  CGContextRestoreGState(offscrenContext);
+  CGGradientRelease(gradient);
+  CGImageRef ref = CGBitmapContextCreateImage(offscrenContext);
+  CGContextClipToMask(context, bounds, ref);
+  CGImageRelease(ref);
+  CGContextRelease(offscrenContext);
 }
 
 - (NSObject *)drawParametersForAsyncLayer:(_ASDisplayLayer *)layer
@@ -352,9 +442,11 @@ ASDISPLAYNODE_INLINE CGFloat ceilPixelValue(CGFloat f)
   UIEdgeInsets shadowPadding = [self shadowPadding];
   CGPoint textOrigin = CGPointMake(self.bounds.origin.x - shadowPadding.left, self.bounds.origin.y - shadowPadding.top);
   return [[ASTextNodeDrawParameters alloc] initWithRenderer:[self _renderer]
-                                                       shadower:[self _shadower]
-                                                     textOrigin:textOrigin
-                                                backgroundColor:self.backgroundColor.CGColor];
+                                                   shadower:[self _shadower]
+                                                 textOrigin:textOrigin
+                                            backgroundColor:self.backgroundColor.CGColor
+                                                   fadeRect:_fadeRect
+                                              fadeDirection:_fadeDirection];
 }
 
 #pragma mark - Attributes

@@ -30,8 +30,6 @@ static const CGFloat ASTextNodeRendererTextCapHeightPadding = 1.3;
   NSAttributedString *_truncationString;
   NSLineBreakMode _truncationMode;
   NSUInteger _maximumLineCount;
-  CGRect _fadeRect;
-  ASTextNodeFadeDirection _fadeDirection;
   NSRange _truncationCharacterRange;
   NSRange _visibleRange;
 
@@ -49,8 +47,6 @@ static const CGFloat ASTextNodeRendererTextCapHeightPadding = 1.3;
                         truncationString:(NSAttributedString *)truncationString
                           truncationMode:(NSLineBreakMode)truncationMode
                         maximumLineCount:(NSUInteger)maximumLineCount
-                                fadeRect:(CGRect)fadeRect
-                           fadeDirection:(ASTextNodeFadeDirection)fadeDirection
                          constrainedSize:(CGSize)constrainedSize
 {
   if (self = [super init]) {
@@ -62,9 +58,6 @@ static const CGFloat ASTextNodeRendererTextCapHeightPadding = 1.3;
     _maximumLineCount = maximumLineCount;
 
     _constrainedSize = constrainedSize;
-  
-    _fadeRect = fadeRect;
-    _fadeDirection = fadeDirection;
   }
   return self;
 }
@@ -617,14 +610,7 @@ static const CGFloat ASTextNodeRendererTextCapHeightPadding = 1.3;
   NSRange glyphRange = [_layoutManager glyphRangeForTextContainer:_textContainer];
   {
     ASDN::MutexLocker l(_textKitLock);
-    
-    if (_fadeDirection != ASTextNodeFadeDirectionNone) {
-      [self drawFadeMask:_fadeRect
-                 inRect:bounds
-          withDirection:_fadeDirection
-              inContext:context];
-    }
-    
+
     [_layoutManager drawBackgroundForGlyphRange:glyphRange atPoint:bounds.origin];
     [_layoutManager drawGlyphsForGlyphRange:glyphRange atPoint:bounds.origin];
   }
@@ -632,80 +618,6 @@ static const CGFloat ASTextNodeRendererTextCapHeightPadding = 1.3;
 
   CGContextRestoreGState(context);
   UIGraphicsPopContext();
-}
-
-- (void)drawFadeMask:(CGRect)maskRect
-             inRect:(CGRect)bounds
-      withDirection:(ASTextNodeFadeDirection)direction
-          inContext:(CGContextRef)context
-{
-  CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceGray();
-  CGContextRef offscrenContext = CGBitmapContextCreate(NULL,
-                                                       bounds.size.width,
-                                                       bounds.size.height,
-                                                       8, 4 * bounds.size.width,
-                                                       colorSpace,
-                                                       (CGBitmapInfo)kCGImageAlphaNone);
-  CGContextSetFillColorWithColor(offscrenContext, [UIColor whiteColor].CGColor);
-  CGContextFillRect(offscrenContext, bounds);
-  
-  CGFloat locations[2] = { 0.0f, 0.0f };
-  
-  switch (direction) {
-    // down and right are normal
-    case ASTextNodeFadeDirectionDown:
-    case ASTextNodeFadeDirectionRight:
-      locations[1] = 1.0f;
-      break;
-      
-      // up and left are reversed
-    case ASTextNodeFadeDirectionUp:
-    case ASTextNodeFadeDirectionLeft:
-      locations[0] = 1.0f;
-      break;
-      
-    case ASTextNodeFadeDirectionNone:
-      break;
-  }
-  
-  CGFloat       components[4] = { 1.0f, 1.0f, 0.0f, 1.0f };
-  CGGradientRef gradient      = CGGradientCreateWithColorComponents(colorSpace, components, locations, 2);
-  CGColorSpaceRelease(colorSpace);
-  
-  CGPoint p0; // gradient start
-  CGPoint p1; // gradient end
-  
-  switch (direction) {
-    case ASTextNodeFadeDirectionUp:
-    case ASTextNodeFadeDirectionDown: {
-      CGFloat midX  = CGRectGetMidX(maskRect);
-      p0    = CGPointMake(midX, CGRectGetMinY(maskRect));
-      p1    = CGPointMake(midX, CGRectGetMaxY(maskRect));
-      break;
-    }
-      
-    case ASTextNodeFadeDirectionLeft:
-    case ASTextNodeFadeDirectionRight: {
-      CGFloat midY  = CGRectGetMidY(maskRect);
-      p0    = CGPointMake(CGRectGetMinX(maskRect), midY);
-      p1    = CGPointMake(CGRectGetMaxX(maskRect), midY);
-      break;
-    }
-      
-    case ASTextNodeFadeDirectionNone:
-      break;
-  }
-  
-  CGContextSaveGState(offscrenContext);
-  CGContextAddRect(offscrenContext, maskRect);
-  CGContextClip(offscrenContext);
-  CGContextDrawLinearGradient(offscrenContext, gradient, p0, p1, 0);
-  CGContextRestoreGState(offscrenContext);
-  CGGradientRelease(gradient);
-  CGImageRef ref = CGBitmapContextCreateImage(offscrenContext);
-  CGContextClipToMask(context, bounds, ref);
-  CGImageRelease(ref);
-  CGContextRelease(offscrenContext);
 }
 
 #pragma mark - String Ranges

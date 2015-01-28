@@ -26,6 +26,18 @@ typedef NS_ENUM(NSUInteger, ASTextNodeHighlightStyle) {
   ASTextNodeHighlightStyleDark
 };
 
+// Andy TODO doc
+/**
+ * Text fade directions.
+ */
+typedef NS_ENUM(NSUInteger, ASTextNodeFadeDirection) {
+  ASTextNodeFadeDirectionNone,
+  ASTextNodeFadeDirectionLeft,
+  ASTextNodeFadeDirectionRight,
+  ASTextNodeFadeDirectionUp,
+  ASTextNodeFadeDirectionDown
+};
+
 /**
  @abstract Draws interactive rich text.
  @discussion Backed by TextKit.
