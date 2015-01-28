@@ -7,6 +7,7 @@
  */
 
 #import <AsyncDisplayKit/ASControlNode.h>
+#import <AsyncDisplayKit/ASTextNodeTypes.h>
 
 @protocol ASTextNodeDelegate;
 
@@ -63,6 +64,19 @@ typedef NS_ENUM(NSUInteger, ASTextNodeHighlightStyle) {
  @abstract If the text node is truncated. Text must have been sized first.
  */
 @property (nonatomic, readonly, assign, getter=isTruncated) BOOL truncated;
+
+// Andy TODO improve
+/**
+ @abstract The rectangle region to fade with a smooth gradient.
+ @default CGRectZero
+ @discussion The rect should be in the coordinate system of the receiver.
+ */
+@property (nonatomic, assign) CGRect fadeRect;
+
+/**
+ @abstract The direction to fade out the `fadeRect`.
+ */
+@property (nonatomic, assign) ASTextNodeFadeDirection fadeDirection;
 
 /**
  @abstract The maximum number of lines to render of the text before truncation.

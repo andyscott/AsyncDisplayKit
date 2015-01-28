@@ -18,13 +18,6 @@
 static const CGFloat ASTextNodeRendererGlyphTouchHitSlop = 5.0;
 static const CGFloat ASTextNodeRendererTextCapHeightPadding = 1.3;
 
-typedef NS_ENUM(NSUInteger, ASTextNodeRendererFadeDirection) {
-  ASTextNodeRendererFadeDirectionUp,
-  ASTextNodeRendererFadeDirectionRight,
-  ASTextNodeRendererFadeDirectionDown,
-  ASTextNodeRendererFadeDirectionLeft
-};
-
 @interface ASTextNodeRenderer ()
 
 @end
@@ -37,6 +30,8 @@ typedef NS_ENUM(NSUInteger, ASTextNodeRendererFadeDirection) {
   NSAttributedString *_truncationString;
   NSLineBreakMode _truncationMode;
   NSUInteger _maximumLineCount;
+  CGRect _fadeRect;
+  ASTextNodeFadeDirection _fadeDirection;
   NSRange _truncationCharacterRange;
   NSRange _visibleRange;
 
@@ -55,6 +50,8 @@ typedef NS_ENUM(NSUInteger, ASTextNodeRendererFadeDirection) {
                           truncationMode:(NSLineBreakMode)truncationMode
                         maximumLineCount:(NSUInteger)maximumLineCount
                          constrainedSize:(CGSize)constrainedSize
+                                fadeRect:(CGRect)fadeRect
+                           fadeDirection:(ASTextNodeFadeDirection)fadeDirection
 {
   if (self = [super init]) {
     _attributedString = attributedString;
@@ -65,6 +62,9 @@ typedef NS_ENUM(NSUInteger, ASTextNodeRendererFadeDirection) {
     _maximumLineCount = maximumLineCount;
 
     _constrainedSize = constrainedSize;
+  
+    _fadeRect = fadeRect;
+    _fadeDirection = fadeDirection;
   }
   return self;
 }
@@ -618,8 +618,12 @@ typedef NS_ENUM(NSUInteger, ASTextNodeRendererFadeDirection) {
   {
     ASDN::MutexLocker l(_textKitLock);
     
-    CGRect fadeRect = [self rectForLastLineGlyphs];
-    [self setFadeMask:fadeRect inRect:bounds withDirection:ASTextNodeRendererFadeDirectionRight inContext:context];
+    if (_fadeDirection != ASTextNodeFadeDirectionNone) {
+      [self drawFadeMask:_fadeRect
+                 inRect:bounds
+          withDirection:_fadeDirection
+              inContext:context];
+    }
     
     [_layoutManager drawBackgroundForGlyphRange:glyphRange atPoint:bounds.origin];
     [_layoutManager drawGlyphsForGlyphRange:glyphRange atPoint:bounds.origin];
@@ -630,9 +634,9 @@ typedef NS_ENUM(NSUInteger, ASTextNodeRendererFadeDirection) {
   UIGraphicsPopContext();
 }
 
-- (void)setFadeMask:(CGRect)maskRect
+- (void)drawFadeMask:(CGRect)maskRect
              inRect:(CGRect)bounds
-      withDirection:(ASTextNodeRendererFadeDirection)direction
+      withDirection:(ASTextNodeFadeDirection)direction
           inContext:(CGContextRef)context
 {
   CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceGray();
@@ -646,15 +650,21 @@ typedef NS_ENUM(NSUInteger, ASTextNodeRendererFadeDirection) {
   CGContextFillRect(offscrenContext, bounds);
   
   CGFloat locations[2] = { 0.0f, 0.0f };
+  
   switch (direction) {
-    case ASTextNodeRendererFadeDirectionDown:
-    case ASTextNodeRendererFadeDirectionRight:
+    // down and right are normal
+    case ASTextNodeFadeDirectionDown:
+    case ASTextNodeFadeDirectionRight:
       locations[1] = 1.0f;
       break;
       
-    case ASTextNodeRendererFadeDirectionUp:
-    case ASTextNodeRendererFadeDirectionLeft:
+      // up and left are reversed
+    case ASTextNodeFadeDirectionUp:
+    case ASTextNodeFadeDirectionLeft:
       locations[0] = 1.0f;
+      break;
+      
+    case ASTextNodeFadeDirectionNone:
       break;
   }
   
@@ -666,21 +676,24 @@ typedef NS_ENUM(NSUInteger, ASTextNodeRendererFadeDirection) {
   CGPoint p1; // gradient end
   
   switch (direction) {
-    case ASTextNodeRendererFadeDirectionUp:
-    case ASTextNodeRendererFadeDirectionDown: {
+    case ASTextNodeFadeDirectionUp:
+    case ASTextNodeFadeDirectionDown: {
       CGFloat midX  = CGRectGetMidX(maskRect);
       p0    = CGPointMake(midX, CGRectGetMinY(maskRect));
       p1    = CGPointMake(midX, CGRectGetMaxY(maskRect));
       break;
     }
       
-    case ASTextNodeRendererFadeDirectionLeft:
-    case ASTextNodeRendererFadeDirectionRight: {
+    case ASTextNodeFadeDirectionLeft:
+    case ASTextNodeFadeDirectionRight: {
       CGFloat midY  = CGRectGetMidY(maskRect);
       p0    = CGPointMake(CGRectGetMinX(maskRect), midY);
       p1    = CGPointMake(CGRectGetMaxX(maskRect), midY);
       break;
     }
+      
+    case ASTextNodeFadeDirectionNone:
+      break;
   }
   
   CGContextSaveGState(offscrenContext);
@@ -693,7 +706,6 @@ typedef NS_ENUM(NSUInteger, ASTextNodeRendererFadeDirection) {
   CGContextClipToMask(context, bounds, ref);
   CGImageRelease(ref);
   CGContextRelease(offscrenContext);
-  // end of Andy TODO
 }
 
 #pragma mark - String Ranges

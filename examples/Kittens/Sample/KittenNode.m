@@ -146,6 +146,8 @@ static const CGFloat kInnerPadding = 10.0f;
   _divider.frame = CGRectMake(0.0f, 0.0f, self.calculatedSize.width, pixelHeight);
 
   _imageNode.frame = CGRectMake(kOuterPadding, kOuterPadding, kImageSize, kImageSize);
+  _textNode.fadeDirection = ASTextNodeFadeDirectionRight;
+  _textNode.fadeRect      = [_textNode frameForLastLineGlyphs];
 
   CGSize textSize = _textNode.calculatedSize;
   _textNode.frame = CGRectMake(kOuterPadding + kImageSize + kInnerPadding, kOuterPadding, textSize.width, textSize.height);

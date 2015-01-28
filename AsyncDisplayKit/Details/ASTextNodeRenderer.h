@@ -8,6 +8,8 @@
 
 #import <UIKit/UIKit.h>
 
+#import "ASTextNodeTypes.h"
+
 typedef void (^as_renderer_index_block_t)(NSUInteger characterIndex,
                                           CGRect glyphBoundingRect,
                                           BOOL *stop);
@@ -55,7 +57,9 @@ typedef NS_ENUM(NSUInteger, ASTextNodeRendererMeasureOption) {
                         truncationString:(NSAttributedString *)truncationString
                           truncationMode:(NSLineBreakMode)truncationMode
                         maximumLineCount:(NSUInteger)maximumLineCount
-                         constrainedSize:(CGSize)constrainedSize;
+                         constrainedSize:(CGSize)constrainedSize
+                                fadeRect:(CGRect)fadeRect
+                           fadeDirection:(ASTextNodeFadeDirection)fadeDirection;
 #pragma mark - Drawing
 /*
  * Draw the renderer's text content into the bounds provided.

@@ -160,7 +160,7 @@ namespace ASDN {
     RecursiveMutex () : Mutex (true) {}
   };
 
-  typedef Locker<Mutex> MutexLocker;
+typedef Locker<Mutex> MutexLocker;
   typedef Unlocker<Mutex> MutexUnlocker;
 
   /**

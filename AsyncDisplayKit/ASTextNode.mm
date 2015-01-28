@@ -244,7 +244,9 @@ ASDISPLAYNODE_INLINE CGFloat ceilPixelValue(CGFloat f)
                                                         truncationString:_composedTruncationString
                                                           truncationMode:_truncationMode
                                                         maximumLineCount:_maximumLineCount
-                                                         constrainedSize:constrainedSize];
+                                                         constrainedSize:constrainedSize
+                                                                fadeRect:_fadeRect
+                                                           fadeDirection:_fadeDirection];
   }
   return _renderer;
 }
@@ -1004,6 +1006,24 @@ ASDISPLAYNODE_INLINE CGFloat ceilPixelValue(CGFloat f)
      }];
   }
   return truncationMutableString;
+}
+
+#pragma mark - Fade rects
+
+- (void)setFadeRect:(CGRect)fadeRect
+{
+  if (!CGRectEqualToRect(fadeRect, _fadeRect)) {
+    _fadeRect = fadeRect;
+    [self _invalidateRenderer];
+  }
+}
+
+- (void)setFadeDirection:(ASTextNodeFadeDirection)fadeDirection
+{
+  if (fadeDirection != _fadeDirection) {
+    _fadeDirection = fadeDirection;
+    [self _invalidateRenderer];
+  }
 }
 
 @end
